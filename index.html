@@ -213,7 +213,6 @@
       </form>
       <div class="row-actions">
         <button type="button" class="btn-primary" id="btnHesapla">Hesapla</button>
-        <button type="button" class="btn-secondary" id="btnKaydet">Kaydet</button>
       </div>
       <div class="err" id="err" hidden></div>
     </div>
@@ -224,30 +223,12 @@
       </table>
     </div>
 
-    <div class="card records">
-      <h2>Kayıtlar</h2>
-      <table class="data" id="kayitTablo">
-        <thead>
-          <tr>
-            <th>Tarih</th>
-            <th>Ürün</th>
-            <th class="num">Adet</th>
-            <th class="num">Toplam USD</th>
-            <th class="num">Birim USD</th>
-            <th class="num">Toplam TL</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="kayitBody"></tbody>
-      </table>
-    </div>
   </div>
   <script>
 (function () {
   var G1 = 0.037;
   var G2 = 0.23;
   var KDV = 0.20;
-  var LS = "ithalat_maliyet_kayitlar_v1";
 
   function parseNum(s) {
     if (s == null || String(s).trim() === "") return NaN;
@@ -431,52 +412,6 @@
     return detay;
   }
 
-  function kayitlariOku() {
-    try {
-      var s = localStorage.getItem(LS);
-      return s ? JSON.parse(s) : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function kayitlariYaz(arr) {
-    localStorage.setItem(LS, JSON.stringify(arr));
-  }
-
-  function kayitlariYukle() {
-    var list = kayitlariOku();
-    list.sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
-    var tb = document.getElementById("kayitBody");
-    tb.innerHTML = "";
-    list.forEach(function (k) {
-      var tr = document.createElement("tr");
-      var t = (k.olusturma || "").replace("T", " ").slice(0, 19);
-      tr.innerHTML =
-        "<td>" + t + "</td>" +
-        "<td>" + escapeHtml(k.urun) + "</td>" +
-        "<td class=\"num\">" + fmtTR(k.adet, 0) + "</td>" +
-        "<td class=\"num\">" + fmtTR(k.toplam_maliyet_usd, 2) + "</td>" +
-        "<td class=\"num\">" + fmtTR(k.birim_maliyet_usd, 2) + "</td>" +
-        "<td class=\"num\">" + fmtTR(k.toplam_maliyet_tl, 2) + "</td>" +
-        "<td><button type=\"button\" class=\"btn-danger\" data-id=\"" + k.id + "\">Sil</button></td>";
-      tb.appendChild(tr);
-    });
-    tb.querySelectorAll("button[data-id]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var id = parseInt(btn.getAttribute("data-id"), 10);
-        var arr = kayitlariOku().filter(function (x) { return x.id !== id; });
-        kayitlariYaz(arr);
-        kayitlariYukle();
-      });
-    });
-  }
-
-  function escapeHtml(s) {
-    var d = document.createElement("div");
-    d.textContent = s;
-    return d.innerHTML;
-  }
 
   document.getElementById("btnHesapla").addEventListener("click", function () {
     hesaplaVeGoster();
