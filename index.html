@@ -398,6 +398,15 @@
       return null;
     }
     var b = formOku();
+    
+    console.log("=== DEBUG: Parse edilen değerler ===");
+    console.log("Kur:", kur);
+    console.log("Adet:", b.adet);
+    console.log("Mal birim USD:", b.mal_birim_usd);
+    console.log("Kargo USD:", b.kargo_usd);
+    console.log("Yurtiçi USD:", b.yurtici_usd);
+    console.log("Damga USD:", b.damga_usd);
+    
     if (b.adet <= 0 || isNaN(b.adet)) {
       err.textContent = "Adet pozitif bir sayı olmalı.";
       err.hidden = false;
