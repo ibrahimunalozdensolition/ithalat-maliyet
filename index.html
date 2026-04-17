@@ -172,11 +172,11 @@
   <div class="wrap">
     <h1>İthalat maliyet hesabı</h1>
     <p class="sub">Ürün, adet, birim maliyet (USD) ve kargo bedelini (USD) girin; gümrük ve KDV satırları aynı mantıkla hesaplanır.</p>
-    <p class="hint">Kayıtlar yalnızca bu tarayıcıda saklanır (localStorage). GitHub Pages veya dosyayı açarak kullanabilirsiniz.</p>
+    <p class="hint">Kayıtlar yalnızca bu tarayıcıda saklanır (localStorage). <strong>Sayıları Türkçe formatla girin:</strong> binlik ayraç için nokta (5.000), ondalık için virgül (1,35).</p>
 
     <div class="kur-row">
       <label for="kur_try" style="margin:0;">USD/TRY kur</label>
-      <input id="kur_try" type="text" inputmode="decimal" autocomplete="off" placeholder="34,50">
+      <input id="kur_try" type="text" inputmode="decimal" autocomplete="off" placeholder="Örn: 44,81">
       <button type="button" class="btn-secondary" id="btnKurYenile">Kuru yenile</button>
     </div>
 
@@ -188,15 +188,15 @@
         </div>
         <div>
           <label for="adet">Adet (birim)</label>
-          <input id="adet" name="adet" type="text" inputmode="decimal" placeholder="3024">
+          <input id="adet" name="adet" type="text" inputmode="decimal" placeholder="Örn: 3.024 veya 5000">
         </div>
         <div>
           <label for="mal_birim_usd">Mal bedeli birim (USD)</label>
-          <input id="mal_birim_usd" name="mal_birim_usd" type="text" inputmode="decimal" placeholder="1,35">
+          <input id="mal_birim_usd" name="mal_birim_usd" type="text" inputmode="decimal" placeholder="Örn: 1,35 veya 2,50">
         </div>
         <div>
           <label for="kargo_usd">Kargo bedeli toplam (USD)</label>
-          <input id="kargo_usd" name="kargo_usd" type="text" inputmode="decimal" placeholder="Navlun toplam">
+          <input id="kargo_usd" name="kargo_usd" type="text" inputmode="decimal" placeholder="Örn: 3.417,12">
         </div>
         <div>
           <label for="yurtici_usd">Yurtiçi giderler (USD)</label>
@@ -248,12 +248,26 @@
   function parseNum(s) {
     if (s == null || String(s).trim() === "") return NaN;
     var t = String(s).trim().replace(/\s/g, "");
+    
     if (t.indexOf(",") >= 0 && t.indexOf(".") >= 0) {
       t = t.replace(/\./g, "").replace(",", ".");
     } else if (t.indexOf(",") >= 0) {
       var parts = t.split(",");
-      if (parts.length === 2 && parts[1].length <= 2) t = parts[0].replace(/\./g, "") + "." + parts[1];
-      else t = t.replace(/,/g, "");
+      if (parts.length === 2 && parts[1].length <= 2) {
+        t = parts[0].replace(/\./g, "") + "." + parts[1];
+      } else {
+        t = t.replace(/,/g, "");
+      }
+    } else if (t.indexOf(".") >= 0) {
+      var dotCount = (t.match(/\./g) || []).length;
+      if (dotCount > 1) {
+        t = t.replace(/\./g, "");
+      } else {
+        var dotParts = t.split(".");
+        if (dotParts.length === 2 && dotParts[1].length === 3 && dotParts[0].length <= 3) {
+          t = t.replace(".", "");
+        }
+      }
     }
     return parseFloat(t);
   }
@@ -276,7 +290,7 @@
     var kdvMatrah = cif + g1 + yurtici;
     var kdv = kdvMatrah * KDV;
     var toplamVergi = g1 + g2 + kdv + damga;
-    var toplamMaliyet = ham + toplamVergi;
+    var toplamMaliyet = cif + yurtici + g1 + g2 + kdv + damga;
     var birim = adet ? toplamMaliyet / adet : 0;
     return {
       ham_usd: roundN(ham, 2),
