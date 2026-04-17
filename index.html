@@ -276,7 +276,7 @@
     var kdvMatrah = cif + g1 + yurtici;
     var kdv = kdvMatrah * KDV;
     var toplamVergi = g1 + g2 + kdv + damga;
-    var toplamMaliyet = cif + yurtici + g1 + g2 + kdv + damga;
+    var toplamMaliyet = ham + toplamVergi;
     var birim = adet ? toplamMaliyet / adet : 0;
     return {
       ham_usd: roundN(ham, 2),
