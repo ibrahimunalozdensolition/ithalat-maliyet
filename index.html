@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>İthalat Maliyet Hesap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222d;
+      --border: #2a3544;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3d9cf5;
+      --accent-dim: #2563a8;
+      --danger: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 1.75rem;
+    }
+    .grid {
+      display: grid;
+      gap: 1rem;
+    }
+    @media (min-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #121820;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(61, 156, 245, 0.2);
+    }
+    .kur-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .kur-row input#kur_try { max-width: 140px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1.25rem;
+    }
+    .row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 1.1rem;
+    }
+    button {
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, var(--accent), var(--accent-dim));
+      color: #fff;
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-secondary {
+      background: #243041;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+    }
+    .err {
+      color: var(--danger);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+    }
+    .result-table th,
+    .result-table td {
+      text-align: left;
+      padding: 0.45rem 0.65rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-table th { color: var(--muted); font-weight: 600; width: 55%; }
+    .result-table tr:last-child td { border-bottom: none; font-weight: 700; font-size: 1.05rem; }
+    .records h2 {
+      font-size: 1.1rem;
+      margin: 0 0 0.85rem;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    table.data th,
+    table.data td {
+      text-align: left;
+      padding: 0.55rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    table.data th { color: var(--muted); font-weight: 600; }
+    table.data tr:hover td { background: rgba(61, 156, 245, 0.06); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    @media (max-width: 720px) {
+      table.data { font-size: 0.75rem; }
+      table.data th:nth-child(3),
+      table.data td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>İthalat maliyet hesabı</h1>
+    <p class="sub">Ürün, adet, birim maliyet (USD) ve kargo bedelini (USD) girin; gümrük ve KDV satırları aynı mantıkla hesaplanır.</p>
+    <p class="hint">Kayıtlar yalnızca bu tarayıcıda saklanır (localStorage). GitHub Pages veya dosyayı açarak kullanabilirsiniz.</p>
+
+    <div class="kur-row">
+      <label for="kur_try" style="margin:0;">USD/TRY kur</label>
+      <input id="kur_try" type="text" inputmode="decimal" autocomplete="off" placeholder="34,50">
+      <button type="button" class="btn-secondary" id="btnKurYenile">Kuru yenile</button>
+    </div>
+
+    <div class="card">
+      <form id="f" class="grid grid-2" onsubmit="return false;">
+        <div style="grid-column: 1 / -1;">
+          <label for="urun">Ürün</label>
+          <input id="urun" name="urun" type="text" placeholder="Örn. Ürün kodu veya adı" autocomplete="off">
+        </div>
+        <div>
+          <label for="adet">Adet (birim)</label>
+          <input id="adet" name="adet" type="text" inputmode="decimal" placeholder="3024">
+        </div>
+        <div>
+          <label for="mal_birim_usd">Mal bedeli birim (USD)</label>
+          <input id="mal_birim_usd" name="mal_birim_usd" type="text" inputmode="decimal" placeholder="1,35">
+        </div>
+        <div>
+          <label for="kargo_usd">Kargo bedeli toplam (USD)</label>
+          <input id="kargo_usd" name="kargo_usd" type="text" inputmode="decimal" placeholder="Navlun toplam">
+        </div>
+        <div>
+          <label for="yurtici_usd">Yurtiçi giderler (USD)</label>
+          <input id="yurtici_usd" name="yurtici_usd" type="text" inputmode="decimal" value="200">
+        </div>
+        <div>
+          <label for="damga_usd">Damga (USD)</label>
+          <input id="damga_usd" name="damga_usd" type="text" inputmode="decimal" value="37">
+        </div>
+      </form>
+      <div class="row-actions">
+        <button type="button" class="btn-primary" id="btnHesapla">Hesapla</button>
+        <button type="button" class="btn-secondary" id="btnKaydet">Kaydet</button>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </div>
+
+    <div class="card" id="sonucCard" hidden>
+      <table class="result-table" id="sonucTablo">
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card records">
+      <h2>Kayıtlar</h2>
+      <table class="data" id="kayitTablo">
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Ürün</th>
+            <th class="num">Adet</th>
+            <th class="num">Toplam USD</th>
+            <th class="num">Birim USD</th>
+            <th class="num">Toplam TL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="kayitBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+(function () {
+  var G1 = 0.037;
+  var G2 = 0.23;
+  var KDV = 0.20;
+  var LS = "ithalat_maliyet_kayitlar_v1";
+
+  function parseNum(s) {
+    if (s == null || String(s).trim() === "") return NaN;
+    var t = String(s).trim().replace(/\s/g, "");
+    if (t.indexOf(",") >= 0 && t.indexOf(".") >= 0) {
+      t = t.replace(/\./g, "").replace(",", ".");
+    } else if (t.indexOf(",") >= 0) {
+      var parts = t.split(",");
+      if (parts.length === 2 && parts[1].length <= 2) t = parts[0].replace(/\./g, "") + "." + parts[1];
+      else t = t.replace(/,/g, "");
+    }
+    return parseFloat(t);
+  }
+
+  function fmtTR(n, frac) {
+    if (typeof n !== "number" || isNaN(n)) return "—";
+    return n.toLocaleString("tr-TR", { minimumFractionDigits: frac, maximumFractionDigits: frac });
+  }
+
+  function roundN(x, d) {
+    var p = Math.pow(10, d);
+    return Math.round(x * p) / p;
+  }
+
+  function hesapla(adet, malBirim, kargo, yurtici, damga) {
+    var ham = adet * malBirim;
+    var cif = ham + kargo;
+    var g1 = cif * G1;
+    var g2 = cif * G2;
+    var kdvMatrah = cif + g1 + yurtici;
+    var kdv = kdvMatrah * KDV;
+    var toplamVergi = g1 + g2 + kdv + damga;
+    var toplamMaliyet = cif + yurtici + g1 + g2 + kdv + damga;
+    var birim = adet ? toplamMaliyet / adet : 0;
+    return {
+      ham_usd: roundN(ham, 2),
+      cif_usd: roundN(cif, 2),
+      gumruk_yuzde_3_7_usd: roundN(g1, 2),
+      ilave_gumruk_yuzde_23_usd: roundN(g2, 2),
+      yurtici_usd: roundN(yurtici, 2),
+      kdv_matrah_usd: roundN(kdvMatrah, 2),
+      kdv_yuzde_20_usd: roundN(kdv, 2),
+      damga_usd: roundN(damga, 2),
+      toplam_vergi_usd: roundN(toplamVergi, 2),
+      toplam_maliyet_usd: roundN(toplamMaliyet, 2),
+      birim_maliyet_usd: roundN(birim, 4)
+    };
+  }
+
+  function tlEkle(detay, kur) {
+    detay.usd_try = roundN(kur, 4);
+    detay.ham_tl = roundN(detay.ham_usd * kur, 2);
+    detay.toplam_maliyet_tl = roundN(detay.toplam_maliyet_usd * kur, 2);
+    detay.birim_maliyet_tl = roundN(detay.birim_maliyet_usd * kur, 2);
+    return detay;
+  }
+
+  function mevcutKur() {
+    var k = parseNum(document.getElementById("kur_try").value);
+    if (isNaN(k) || k <= 0) return NaN;
+    return k;
+  }
+
+  async function loadKur() {
+    var el = document.getElementById("kur_try");
+    var k = null;
+    try {
+      var r = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+      if (r.ok) {
+        var j = await r.json();
+        k = j.rates && j.rates.TRY;
+      }
+    } catch (e) {}
+    if (k == null || isNaN(k)) {
+      try {
+        var r2 = await fetch("https://open.er-api.com/v6/latest/USD");
+        if (r2.ok) {
+          var j2 = await r2.json();
+          k = j2.rates && j2.rates.TRY;
+        }
+      } catch (e2) {}
+    }
+    if (k == null || isNaN(k)) k = 34.5;
+    el.value = fmtTR(k, 4);
+  }
+
+  function sonucGoster(j) {
+    var tb = document.querySelector("#sonucTablo tbody");
+    tb.innerHTML = "";
+    var rows = [
+      ["Ürünün ham bedeli (USD)", j.ham_usd],
+      ["CIF (mal + kargo) (USD)", j.cif_usd],
+      ["Gümrük %3,7 (USD)", j.gumruk_yuzde_3_7_usd],
+      ["İlave gümrük %23 (USD)", j.ilave_gumruk_yuzde_23_usd],
+      ["Yurtiçi giderler (USD)", j.yurtici_usd],
+      ["KDV matrahı (USD)", j.kdv_matrah_usd],
+      ["KDV %20 (USD)", j.kdv_yuzde_20_usd],
+      ["Damga (USD)", j.damga_usd],
+      ["Gümrüğe ödenecek toplam vergi (USD)", j.toplam_vergi_usd],
+      ["Toplam maliyet (USD)", j.toplam_maliyet_usd],
+      ["Birim maliyet (USD)", j.birim_maliyet_usd],
+      ["Ham bedel (TL)", j.ham_tl],
+      ["Birim maliyet (TL)", j.birim_maliyet_tl],
+      ["Toplam maliyet (TL)", j.toplam_maliyet_tl]
+    ];
+    rows.forEach(function (row, i) {
+      var tr = document.createElement("tr");
+      var td1 = document.createElement("td");
+      td1.textContent = row[0];
+      var td2 = document.createElement("td");
+      td2.className = "num";
+      var b = row[1];
+      td2.textContent = typeof b === "number" ? fmtTR(b, i === 10 ? 4 : 2) : b;
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      tb.appendChild(tr);
+    });
+    document.getElementById("sonucCard").hidden = false;
+  }
+
+  function formOku() {
+    return {
+      adet: parseNum(document.getElementById("adet").value),
+      mal_birim_usd: parseNum(document.getElementById("mal_birim_usd").value),
+      kargo_usd: parseNum(document.getElementById("kargo_usd").value),
+      yurtici_usd: parseNum(document.getElementById("yurtici_usd").value),
+      damga_usd: parseNum(document.getElementById("damga_usd").value)
+    };
+  }
+
+  function hesaplaVeGoster() {
+    var err = document.getElementById("err");
+    err.hidden = true;
+    var kur = mevcutKur();
+    if (isNaN(kur)) {
+      err.textContent = "Geçerli bir USD/TRY kuru girin veya Kuru yenile.";
+      err.hidden = false;
+      return null;
+    }
+    var b = formOku();
+    if (b.adet <= 0 || isNaN(b.adet)) {
+      err.textContent = "Adet pozitif bir sayı olmalı.";
+      err.hidden = false;
+      return null;
+    }
+    if (isNaN(b.mal_birim_usd) || b.mal_birim_usd < 0 || isNaN(b.kargo_usd) || b.kargo_usd < 0 ||
+        isNaN(b.yurtici_usd) || b.yurtici_usd < 0 || isNaN(b.damga_usd) || b.damga_usd < 0) {
+      err.textContent = "Tüm tutarlar geçerli sayılar olmalı.";
+      err.hidden = false;
+      return null;
+    }
+    var detay = hesapla(b.adet, b.mal_birim_usd, b.kargo_usd, b.yurtici_usd, b.damga_usd);
+    tlEkle(detay, kur);
+    sonucGoster(detay);
+    return detay;
+  }
+
+  function kayitlariOku() {
+    try {
+      var s = localStorage.getItem(LS);
+      return s ? JSON.parse(s) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function kayitlariYaz(arr) {
+    localStorage.setItem(LS, JSON.stringify(arr));
+  }
+
+  function kayitlariYukle() {
+    var list = kayitlariOku();
+    list.sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
+    var tb = document.getElementById("kayitBody");
+    tb.innerHTML = "";
+    list.forEach(function (k) {
+      var tr = document.createElement("tr");
+      var t = (k.olusturma || "").replace("T", " ").slice(0, 19);
+      tr.innerHTML =
+        "<td>" + t + "</td>" +
+        "<td>" + escapeHtml(k.urun) + "</td>" +
+        "<td class=\"num\">" + fmtTR(k.adet, 0) + "</td>" +
+        "<td class=\"num\">" + fmtTR(k.toplam_maliyet_usd, 2) + "</td>" +
+        "<td class=\"num\">" + fmtTR(k.birim_maliyet_usd, 2) + "</td>" +
+        "<td class=\"num\">" + fmtTR(k.toplam_maliyet_tl, 2) + "</td>" +
+        "<td><button type=\"button\" class=\"btn-danger\" data-id=\"" + k.id + "\">Sil</button></td>";
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll("button[data-id]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = parseInt(btn.getAttribute("data-id"), 10);
+        var arr = kayitlariOku().filter(function (x) { return x.id !== id; });
+        kayitlariYaz(arr);
+        kayitlariYukle();
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  document.getElementById("btnHesapla").addEventListener("click", function () {
+    hesaplaVeGoster();
+  });
+
+  document.getElementById("btnKaydet").addEventListener("click", function () {
+    var err = document.getElementById("err");
+    err.hidden = true;
+    var urun = document.getElementById("urun").value.trim();
+    if (!urun) {
+      err.textContent = "Ürün adı girin";
+      err.hidden = false;
+      return;
+    }
+    var detay = hesaplaVeGoster();
+    if (!detay) return;
+    var arr = kayitlariOku();
+    var id = Date.now();
+    var b = formOku();
+    arr.push({
+      id: id,
+      olusturma: new Date().toISOString(),
+      urun: urun,
+      adet: b.adet,
+      mal_birim_usd: b.mal_birim_usd,
+      kargo_usd: b.kargo_usd,
+      yurtici_usd: b.yurtici_usd,
+      damga_usd: b.damga_usd,
+      usd_try: detay.usd_try,
+      toplam_maliyet_usd: detay.toplam_maliyet_usd,
+      birim_maliyet_usd: detay.birim_maliyet_usd,
+      toplam_maliyet_tl: detay.toplam_maliyet_tl
+    });
+    kayitlariYaz(arr);
+    kayitlariYukle();
+  });
+
+  document.getElementById("btnKurYenile").addEventListener("click", function () {
+    loadKur();
+  });
+
+  loadKur();
+  kayitlariYukle();
+  setInterval(loadKur, 120000);
+})();
+  </script>
+</body>
+</html>

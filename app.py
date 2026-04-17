@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request, send_from_directory
 
 BASE = Path(__file__).resolve().parent
 DB_PATH = BASE / "maliyet.db"
@@ -100,7 +100,7 @@ def hesapla(adet, mal_birim_usd, kargo_usd, yurtici_usd, damga_usd):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return send_from_directory(BASE, "index.html")
 
 
 @app.route("/api/kur")
