@@ -117,13 +117,6 @@
       color: var(--text);
       border: 1px solid var(--border);
     }
-    .btn-danger {
-      background: transparent;
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      padding: 0.35rem 0.65rem;
-      font-size: 0.8rem;
-    }
     .err {
       color: var(--danger);
       font-size: 0.9rem;
@@ -143,36 +136,14 @@
     }
     .result-table th { color: var(--muted); font-weight: 600; width: 55%; }
     .result-table tr:last-child td { border-bottom: none; font-weight: 700; font-size: 1.05rem; }
-    .records h2 {
-      font-size: 1.1rem;
-      margin: 0 0 0.85rem;
-    }
-    table.data {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    table.data th,
-    table.data td {
-      text-align: left;
-      padding: 0.55rem 0.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    table.data th { color: var(--muted); font-weight: 600; }
-    table.data tr:hover td { background: rgba(61, 156, 245, 0.06); }
     .num { text-align: right; font-variant-numeric: tabular-nums; }
-    @media (max-width: 720px) {
-      table.data { font-size: 0.75rem; }
-      table.data th:nth-child(3),
-      table.data td:nth-child(3) { display: none; }
-    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>İthalat maliyet hesabı</h1>
     <p class="sub">Ürün, adet, birim maliyet (USD) ve kargo bedelini (USD) girin; gümrük ve KDV satırları aynı mantıkla hesaplanır.</p>
-    <p class="hint">Kayıtlar yalnızca bu tarayıcıda saklanır (localStorage). <strong>Sayıları Türkçe formatla girin:</strong> binlik ayraç için nokta (5.000), ondalık için virgül (1,35).</p>
+    <p class="hint"><strong>Sayıları Türkçe formatla girin:</strong> binlik ayraç için nokta (5.000), ondalık için virgül (1,35).</p>
 
     <div class="kur-row">
       <label for="kur_try" style="margin:0;">USD/TRY kur</label>
@@ -306,23 +277,35 @@
   async function loadKur() {
     var el = document.getElementById("kur_try");
     var k = null;
-    try {
-      var r = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
-      if (r.ok) {
-        var j = await r.json();
-        k = j.rates && j.rates.TRY;
-      }
-    } catch (e) {}
-    if (k == null || isNaN(k)) {
+    
+    var apis = [
+      "https://open.er-api.com/v6/latest/USD",
+      "https://api.exchangerate-api.com/v4/latest/USD"
+    ];
+    
+    for (var i = 0; i < apis.length; i++) {
       try {
-        var r2 = await fetch("https://open.er-api.com/v6/latest/USD");
-        if (r2.ok) {
-          var j2 = await r2.json();
-          k = j2.rates && j2.rates.TRY;
+        var r = await fetch(apis[i], {
+          method: 'GET',
+          mode: 'cors'
+        });
+        if (r.ok) {
+          var j = await r.json();
+          k = j.rates && j.rates.TRY;
+          if (k != null && !isNaN(k) && k > 0) {
+            console.log("Kur başarıyla çekildi: " + k + " (API " + (i + 1) + ")");
+            break;
+          }
         }
-      } catch (e2) {}
+      } catch (e) {
+        console.warn("API " + (i + 1) + " hatası:", e.message);
+      }
     }
-    if (k == null || isNaN(k)) k = 34.5;
+    
+    if (k == null || isNaN(k) || k <= 0) {
+      console.warn("API'lerden kur çekilemedi, manuel girin veya varsayılan kullanın");
+      k = 44.81;
+    }
     el.value = fmtTR(k, 4);
   }
 
@@ -417,45 +400,11 @@
     hesaplaVeGoster();
   });
 
-  document.getElementById("btnKaydet").addEventListener("click", function () {
-    var err = document.getElementById("err");
-    err.hidden = true;
-    var urun = document.getElementById("urun").value.trim();
-    if (!urun) {
-      err.textContent = "Ürün adı girin";
-      err.hidden = false;
-      return;
-    }
-    var detay = hesaplaVeGoster();
-    if (!detay) return;
-    var arr = kayitlariOku();
-    var id = Date.now();
-    var b = formOku();
-    arr.push({
-      id: id,
-      olusturma: new Date().toISOString(),
-      urun: urun,
-      adet: b.adet,
-      mal_birim_usd: b.mal_birim_usd,
-      kargo_usd: b.kargo_usd,
-      yurtici_usd: b.yurtici_usd,
-      damga_usd: b.damga_usd,
-      musavir_tl: b.musavir_tl,
-      usd_try: detay.usd_try,
-      toplam_maliyet_usd: detay.toplam_maliyet_usd,
-      birim_maliyet_usd: detay.birim_maliyet_usd,
-      toplam_maliyet_tl: detay.toplam_maliyet_tl
-    });
-    kayitlariYaz(arr);
-    kayitlariYukle();
-  });
-
   document.getElementById("btnKurYenile").addEventListener("click", function () {
     loadKur();
   });
 
   loadKur();
-  kayitlariYukle();
 })();
   </script>
 </body>
