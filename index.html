@@ -206,6 +206,10 @@
           <label for="damga_usd">Damga (USD)</label>
           <input id="damga_usd" name="damga_usd" type="text" inputmode="decimal" value="37">
         </div>
+        <div>
+          <label for="musavir_tl">Gümrük müşavir parası (TL)</label>
+          <input id="musavir_tl" name="musavir_tl" type="text" inputmode="decimal" value="0">
+        </div>
       </form>
       <div class="row-actions">
         <button type="button" class="btn-primary" id="btnHesapla">Hesapla</button>
@@ -277,7 +281,7 @@
     return Math.round(x * p) / p;
   }
 
-  function hesapla(adet, malBirim, kargo, yurtici, damga) {
+  function hesapla(adet, malBirim, kargo, yurtici, damga, musavir_usd) {
     var ham = adet * malBirim;
     var cif = ham + kargo;
     var g1 = cif * G1;
@@ -285,7 +289,7 @@
     var kdvMatrah = cif + g1 + yurtici;
     var kdv = kdvMatrah * KDV;
     var toplamVergi = g1 + g2 + kdv + damga;
-    var toplamMaliyet = cif + yurtici + g1 + g2 + kdv + damga;
+    var toplamMaliyet = cif + yurtici + g1 + g2 + kdv + damga + musavir_usd;
     var birim = adet ? toplamMaliyet / adet : 0;
     return {
       ham_usd: roundN(ham, 2),
@@ -296,15 +300,17 @@
       kdv_matrah_usd: roundN(kdvMatrah, 2),
       kdv_yuzde_20_usd: roundN(kdv, 2),
       damga_usd: roundN(damga, 2),
+      musavir_usd: roundN(musavir_usd, 2),
       toplam_vergi_usd: roundN(toplamVergi, 2),
       toplam_maliyet_usd: roundN(toplamMaliyet, 2),
       birim_maliyet_usd: roundN(birim, 4)
     };
   }
 
-  function tlEkle(detay, kur) {
+  function tlEkle(detay, kur, musavir_tl) {
     detay.usd_try = roundN(kur, 4);
     detay.ham_tl = roundN(detay.ham_usd * kur, 2);
+    detay.musavir_tl = roundN(musavir_tl, 2);
     detay.toplam_maliyet_tl = roundN(detay.toplam_maliyet_usd * kur, 2);
     detay.birim_maliyet_tl = roundN(detay.birim_maliyet_usd * kur, 2);
     return detay;
@@ -351,6 +357,8 @@
       ["KDV matrahı (USD)", j.kdv_matrah_usd],
       ["KDV %20 (USD)", j.kdv_yuzde_20_usd],
       ["Damga (USD)", j.damga_usd],
+      ["Gümrük müşavir parası (USD)", j.musavir_usd],
+      ["Gümrük müşavir parası (TL)", j.musavir_tl],
       ["Gümrüğe ödenecek toplam vergi (USD)", j.toplam_vergi_usd],
       ["Toplam maliyet (USD)", j.toplam_maliyet_usd],
       ["Birim maliyet (USD)", j.birim_maliyet_usd],
@@ -365,7 +373,7 @@
       var td2 = document.createElement("td");
       td2.className = "num";
       var b = row[1];
-      td2.textContent = typeof b === "number" ? fmtTR(b, i === 10 ? 4 : 2) : b;
+      td2.textContent = typeof b === "number" ? fmtTR(b, i === 12 ? 4 : 2) : b;
       tr.appendChild(td1);
       tr.appendChild(td2);
       tb.appendChild(tr);
@@ -379,7 +387,8 @@
       mal_birim_usd: parseNum(document.getElementById("mal_birim_usd").value),
       kargo_usd: parseNum(document.getElementById("kargo_usd").value),
       yurtici_usd: parseNum(document.getElementById("yurtici_usd").value),
-      damga_usd: parseNum(document.getElementById("damga_usd").value)
+      damga_usd: parseNum(document.getElementById("damga_usd").value),
+      musavir_tl: parseNum(document.getElementById("musavir_tl").value)
     };
   }
 
@@ -401,6 +410,7 @@
     console.log("Kargo USD:", b.kargo_usd);
     console.log("Yurtiçi USD:", b.yurtici_usd);
     console.log("Damga USD:", b.damga_usd);
+    console.log("Müşavir TL:", b.musavir_tl);
     
     if (b.adet <= 0 || isNaN(b.adet)) {
       err.textContent = "Adet pozitif bir sayı olmalı.";
@@ -408,13 +418,15 @@
       return null;
     }
     if (isNaN(b.mal_birim_usd) || b.mal_birim_usd < 0 || isNaN(b.kargo_usd) || b.kargo_usd < 0 ||
-        isNaN(b.yurtici_usd) || b.yurtici_usd < 0 || isNaN(b.damga_usd) || b.damga_usd < 0) {
+        isNaN(b.yurtici_usd) || b.yurtici_usd < 0 || isNaN(b.damga_usd) || b.damga_usd < 0 ||
+        isNaN(b.musavir_tl) || b.musavir_tl < 0) {
       err.textContent = "Tüm tutarlar geçerli sayılar olmalı.";
       err.hidden = false;
       return null;
     }
-    var detay = hesapla(b.adet, b.mal_birim_usd, b.kargo_usd, b.yurtici_usd, b.damga_usd);
-    tlEkle(detay, kur);
+    var musavir_usd = b.musavir_tl / kur;
+    var detay = hesapla(b.adet, b.mal_birim_usd, b.kargo_usd, b.yurtici_usd, b.damga_usd, musavir_usd);
+    tlEkle(detay, kur, b.musavir_tl);
     sonucGoster(detay);
     return detay;
   }
@@ -493,6 +505,7 @@
       kargo_usd: b.kargo_usd,
       yurtici_usd: b.yurtici_usd,
       damga_usd: b.damga_usd,
+      musavir_tl: b.musavir_tl,
       usd_try: detay.usd_try,
       toplam_maliyet_usd: detay.toplam_maliyet_usd,
       birim_maliyet_usd: detay.birim_maliyet_usd,
