@@ -80,7 +80,7 @@ def hesapla(adet, mal_birim_usd, kargo_usd, yurtici_usd, damga_usd):
     kdv_matrah = cif + g1 + yurtici_usd
     kdv = kdv_matrah * KDV_ORAN
     toplam_vergi = g1 + g2 + kdv + damga_usd
-    toplam_maliyet = ham + toplam_vergi
+    toplam_maliyet = cif + yurtici_usd + g1 + g2 + kdv + damga_usd
     birim = toplam_maliyet / adet if adet else 0.0
     detay = {
         "ham_usd": round(ham, 2),

@@ -252,12 +252,7 @@
     if (t.indexOf(",") >= 0 && t.indexOf(".") >= 0) {
       t = t.replace(/\./g, "").replace(",", ".");
     } else if (t.indexOf(",") >= 0) {
-      var parts = t.split(",");
-      if (parts.length === 2 && parts[1].length <= 2) {
-        t = parts[0].replace(/\./g, "") + "." + parts[1];
-      } else {
-        t = t.replace(/,/g, "");
-      }
+      t = t.replace(/\./g, "").replace(",", ".");
     } else if (t.indexOf(".") >= 0) {
       var dotCount = (t.match(/\./g) || []).length;
       if (dotCount > 1) {
